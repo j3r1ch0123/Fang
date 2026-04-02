@@ -11,6 +11,7 @@ A modular web application penetration testing framework for identifying and vali
 - **Server-Side Template Injection (SSTI)** — Auto-detects engine (Jinja2, Tornado, Django, ERB, Twig) and drops into an interactive shell
 - **Local File Inclusion (LFI)** — File read, PHP filter base64 decode, SSH log poisoning, secrets scanning, Tor support
 - **Server-Side Request Forgery (SSRF)** — Callback-based detection with normal, decimal, and hex IP encoding modes
+- **XML External Entity injector** - Detects for XXE injection and reads files
 
 ---
 
