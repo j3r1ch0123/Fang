@@ -1,4 +1,4 @@
-# Fang 🐍
+# Fang 
 A modular web application penetration testing framework for identifying and validating common vulnerabilities.
 
 > **Disclaimer:** This tool is intended for authorized penetration testing and security research only. Only use Fang against systems you own or have explicit written permission to test. Unauthorized use is illegal and unethical.
