@@ -75,6 +75,21 @@ def ssrf():
     subprocess.run(shlex.split(cmd))
     os.chdir("..")
 
+def xxe():
+    os.chdir("XXE")
+    print("[+] Enter the URL of the vulnerable web application: ")
+    url = input(">>> ")
+    print("[+] Enter the file to read [default: /etc/passwd]: ")
+    file_path = input(">>> ").strip() or "/etc/passwd"
+    print("[+] Enter the XML field name [default: email]: ")
+    field = input(">>> ").strip() or "email"
+    print("[+] Use PHP filter? (y/n): ")
+    php_filter = "--php-filter" if input(">>> ").strip().lower() == "y" else ""
+
+    cmd = f"python3 xxe.py {url} {file_path} --field {field} {php_filter}"
+    subprocess.run(shlex.split(cmd))
+    os.chdir("..")
+
 def main():
     ascii_banner = pyfiglet.figlet_format("Fang")
     print(ascii_banner)
@@ -83,7 +98,8 @@ def main():
         print("2. Server-Side Template Injection")
         print("3. Local File Inclusion")
         print("4. Server-Side Request Forgery")
-        print("5. Exit")
+        print("5. XML External Entity Injection")
+        print("6. Exit")
         print(">>> ", end="")
         choice = input().strip()
         if choice == "1":
