@@ -111,7 +111,9 @@ def main():
         elif choice == "4":
             ssrf()
         elif choice == "5":
-            print("[*] Exiting...")
+            xxe()
+        elif choice == "6":
+            print("Exiting...")
             sys.exit(0)
         else:
             print("[-] Invalid choice")
