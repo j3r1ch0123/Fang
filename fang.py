@@ -56,7 +56,7 @@ def lfi():
     print("[+] Enter encoding method (none, url, double, base64) [default: none]: ")
     encode = input(">>> ").strip() or "none"
 
-    cmd = f"python3 lfi.py {url} {param} {lfi_payload} --method {method} --encode {encode}"
+    cmd = f"python3 lfi.py {url} {param} {lfi_payload} {method} --encode {encode}"
     subprocess.run(shlex.split(cmd))
     os.chdir("..")
 
