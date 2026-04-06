@@ -94,7 +94,8 @@ def api_hack():
     os.chdir("API")
     print("1. Mass Assignment")
     print("2. BOLA/IDOR")
-    print("3. Back")
+    print("3. JWT")
+    print("4. Exit")
     choice = input(">>> ").strip()
 
     if choice == "1":
@@ -138,6 +139,24 @@ def api_hack():
         subprocess.run(shlex.split(cmd))
 
     elif choice == "3":
+        print("[+] Enter the target API endpoint: ")
+        url = input(">>> ")
+        print("[+] Enter JWT token: ")
+        token_input = input(">>> ").strip()
+        print("[+] Use a wordlist? (y/n): ")
+        wordlist = ""
+        if input(">>> ").strip().lower() == "y":
+            print("[+] Enter path to wordlist: ")
+            wordlist = f"--wordlist {input('>>> ').strip()}"
+        print("[+] Save results to file? Enter filename or leave blank to skip: ")
+        outfile_input = input(">>> ").strip()
+        outfile = f"--outfile {outfile_input}" if outfile_input else ""
+
+        cmd = f"python3 jwt.py {token_input} --url {url} --all {wordlist} {outfile}"
+        subprocess.run(shlex.split(cmd))
+    
+    elif choice == "4":
+        print("Back to the main menu")
         os.chdir("..")
         return
 
