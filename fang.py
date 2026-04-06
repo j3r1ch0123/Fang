@@ -99,6 +99,7 @@ def api_hack():
     choice = input(">>> ").strip()
 
     if choice == "1":
+        os.chdir("Mass-Assignment")
         print("[+] Enter the base URL of the vulnerable API: ")
         url = input(">>> ")
         print("[+] Enter the registration endpoint (e.g. api/register): ")
@@ -119,8 +120,10 @@ def api_hack():
         fields_arg = f"--fields {' '.join(fields)}" if fields else ""
         cmd = f"python3 mass_assignment.py {url} {endpoint} {username} {password} {fields_arg} {tor} {outfile}"
         subprocess.run(shlex.split(cmd))
+        os.chdir("..")
 
     elif choice == "2":
+        os.chdir("BOLA")
         print("[+] Enter the target API endpoint (e.g. http://target.com/api/users): ")
         url = input(">>> ")
         print("[+] Enter Bearer token (leave blank if none): ")
@@ -137,8 +140,10 @@ def api_hack():
 
         cmd = f"python3 bola.py {url} {token} {id_range} {tor} {outfile}"
         subprocess.run(shlex.split(cmd))
+        os.chdir("..")
 
     elif choice == "3":
+        os.chdir("JWT")
         print("[+] Enter the target API endpoint: ")
         url = input(">>> ")
         print("[+] Enter JWT token: ")
@@ -154,6 +159,7 @@ def api_hack():
 
         cmd = f"python3 jwt.py {token_input} --url {url} --all {wordlist} {outfile}"
         subprocess.run(shlex.split(cmd))
+        os.chdir("..")
     
     elif choice == "4":
         print("Back to the main menu")
