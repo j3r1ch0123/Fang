@@ -90,6 +90,62 @@ def xxe():
     subprocess.run(shlex.split(cmd))
     os.chdir("..")
 
+def api_hack():
+    os.chdir("API")
+    print("1. Mass Assignment")
+    print("2. BOLA/IDOR")
+    print("3. Back")
+    choice = input(">>> ").strip()
+
+    if choice == "1":
+        print("[+] Enter the base URL of the vulnerable API: ")
+        url = input(">>> ")
+        print("[+] Enter the registration endpoint (e.g. api/register): ")
+        endpoint = input(">>> ")
+        print("[+] Enter the username: ")
+        username = input(">>> ")
+        print("[+] Enter the password: ")
+        password = input(">>> ")
+        print("[+] Enter fields to test (comma-separated) [leave blank for all]: ")
+        fields_input = input(">>> ").strip()
+        fields = fields_input.split(",") if fields_input else None
+        print("[+] Use Tor? (y/n): ")
+        tor = "--tor" if input(">>> ").strip().lower() == "y" else ""
+        print("[+] Save results to file? Enter filename or leave blank to skip: ")
+        outfile_input = input(">>> ").strip()
+        outfile = f"--outfile {outfile_input}" if outfile_input else ""
+
+        fields_arg = f"--fields {' '.join(fields)}" if fields else ""
+        cmd = f"python3 mass_assignment.py {url} {endpoint} {username} {password} {fields_arg} {tor} {outfile}"
+        subprocess.run(shlex.split(cmd))
+
+    elif choice == "2":
+        print("[+] Enter the target API endpoint (e.g. http://target.com/api/users): ")
+        url = input(">>> ")
+        print("[+] Enter Bearer token (leave blank if none): ")
+        token_input = input(">>> ").strip()
+        token = f"--token {token_input}" if token_input else ""
+        print("[+] How many IDs to test? [default: 5]: ")
+        id_range_input = input(">>> ").strip()
+        id_range = f"--range {id_range_input}" if id_range_input else ""
+        print("[+] Use Tor? (y/n): ")
+        tor = "--tor" if input(">>> ").strip().lower() == "y" else ""
+        print("[+] Save results to file? Enter filename or leave blank to skip: ")
+        outfile_input = input(">>> ").strip()
+        outfile = f"--outfile {outfile_input}" if outfile_input else ""
+
+        cmd = f"python3 bola.py {url} {token} {id_range} {tor} {outfile}"
+        subprocess.run(shlex.split(cmd))
+
+    elif choice == "3":
+        os.chdir("..")
+        return
+
+    else:
+        print("[-] Invalid choice")
+
+    os.chdir("..")
+
 def main():
     ascii_banner = pyfiglet.figlet_format("Fang")
     print(ascii_banner)
@@ -99,7 +155,8 @@ def main():
         print("3. Local File Inclusion")
         print("4. Server-Side Request Forgery")
         print("5. XML External Entity Injection")
-        print("6. Exit")
+        print("6. API Pentesting Toolkit")
+        print("7. Exit")
         print(">>> ", end="")
         choice = input().strip()
         if choice == "1":
@@ -113,6 +170,8 @@ def main():
         elif choice == "5":
             xxe()
         elif choice == "6":
+            api_hack()
+        elif choice == "7":
             print("Exiting...")
             sys.exit(0)
         else:
