@@ -90,6 +90,21 @@ def xxe():
     subprocess.run(shlex.split(cmd))
     os.chdir("..")
 
+def xss():
+    os.chdir("XSS")
+    print("[+] Enter the URL of the vulnerable web application: ")
+    url = input(">>> ")
+    print("[+] Enter the vulnerable parameter: ")
+    param = input(">>> ")
+    print("[+] Enter the HTTP method (GET or POST) [default: GET]: ")
+    method = input(">>> ").strip().upper() or "GET"
+    if method not in ["GET", "POST"]:
+        print("[-] Invalid method, defaulting to GET")
+        method = "GET"
+
+    cmd = f"python3 xss.py {url} {param} --method {method}"
+    subprocess.run(shlex.split(cmd), cwd="XSS")
+
 def api_hack():
     os.chdir("API")
     print("1. Mass Assignment")
@@ -177,9 +192,11 @@ def fuzz():
     url = input(">>> ")
     print("[+] Enter the number of steps (default 10): ")
     steps = input(">>> ")
-    cmd = f"python3 fuzzer.py {url} --steps {steps}"
+    print("[+] Enter path to flow file (e.g. flows.json): ")
+    flow = input(">>> ").strip()
+
+    cmd = f"python3 fuzzer.py {url} --flow {flow}"
     subprocess.run(shlex.split(cmd))
-    os.chdir("..")
 
 def main():
     ascii_banner = pyfiglet.figlet_format("Fang")
@@ -190,9 +207,10 @@ def main():
         print("3. Local File Inclusion")
         print("4. Server-Side Request Forgery")
         print("5. XML External Entity Injection")
-        print("6. API Pentesting Toolkit")
-        print("7. Fuzzer")
-        print("8. Exit")
+        print("6. XSS")
+        print("7. API Pentesting Toolkit")
+        print("8. Fuzzer")
+        print("9. Exit")
         print(">>> ", end="")
         choice = input().strip()
         if choice == "1":
@@ -206,10 +224,12 @@ def main():
         elif choice == "5":
             xxe()
         elif choice == "6":
-            api_hack()
+            xss()
         elif choice == "7":
-            fuzz()
+            api_hack()
         elif choice == "8":
+            fuzz()
+        elif choice == "9":
             print("Goodbye!")
             break
         else:
