@@ -99,6 +99,7 @@ def api_hack():
     choice = input(">>> ").strip()
 
     if choice == "1":
+        os.chdir("Mass-Assignment")
         print("[+] Enter the base URL of the vulnerable API: ")
         url = input(">>> ")
         print("[+] Enter the registration endpoint (e.g. api/register): ")
@@ -119,8 +120,10 @@ def api_hack():
         fields_arg = f"--fields {' '.join(fields)}" if fields else ""
         cmd = f"python3 mass_assignment.py {url} {endpoint} {username} {password} {fields_arg} {tor} {outfile}"
         subprocess.run(shlex.split(cmd))
+        os.chdir("..")
 
     elif choice == "2":
+        os.chdir("BOLA")
         print("[+] Enter the target API endpoint (e.g. http://target.com/api/users): ")
         url = input(">>> ")
         print("[+] Enter Bearer token (leave blank if none): ")
@@ -137,8 +140,10 @@ def api_hack():
 
         cmd = f"python3 bola.py {url} {token} {id_range} {tor} {outfile}"
         subprocess.run(shlex.split(cmd))
+        os.chdir("..")
 
     elif choice == "3":
+        os.chdir("JWT")
         print("[+] Enter the target API endpoint: ")
         url = input(">>> ")
         print("[+] Enter JWT token: ")
@@ -154,6 +159,7 @@ def api_hack():
 
         cmd = f"python3 jwt.py {token_input} --url {url} --all {wordlist} {outfile}"
         subprocess.run(shlex.split(cmd))
+        os.chdir("..")
     
     elif choice == "4":
         print("Back to the main menu")
@@ -163,6 +169,16 @@ def api_hack():
     else:
         print("[-] Invalid choice")
 
+    os.chdir("..")
+
+def fuzz():
+    os.chdir("Fuzzer")
+    print("[+] Enter the URL to fuzz: ")
+    url = input(">>> ")
+    print("[+] Enter the number of steps (default 10): ")
+    steps = input(">>> ")
+    cmd = f"python3 fuzzer.py {url} --steps {steps}"
+    subprocess.run(shlex.split(cmd))
     os.chdir("..")
 
 def main():
@@ -175,7 +191,8 @@ def main():
         print("4. Server-Side Request Forgery")
         print("5. XML External Entity Injection")
         print("6. API Pentesting Toolkit")
-        print("7. Exit")
+        print("7. Fuzzer")
+        print("8. Exit")
         print(">>> ", end="")
         choice = input().strip()
         if choice == "1":
@@ -191,8 +208,10 @@ def main():
         elif choice == "6":
             api_hack()
         elif choice == "7":
-            print("Exiting...")
-            sys.exit(0)
+            fuzz()
+        elif choice == "8":
+            print("Goodbye!")
+            break
         else:
             print("[-] Invalid choice")
 
