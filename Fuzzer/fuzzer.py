@@ -1,7 +1,8 @@
 # Fuzzer/state_fuzzer.py
 import argparse
 import requests
-from .utils import random_string, send_request
+import json
+from utils import random_string, send_request
 
 class StateFuzzer:
     def __init__(self, session, base_url):
@@ -33,15 +34,39 @@ class StateFuzzer:
             result = self.run_flow(swapped)
             if result != baseline:
                 print(f"[!] Order manipulation detected between {steps[i]['name']} and {steps[i+1]['name']}")
-    
+
+def load_flow(path):
+    try:
+        with open(path, "r") as f:
+            steps = json.load(f)
+        print(f"[*] Loaded {len(steps)} steps from {path}")
+        return steps
+    except FileNotFoundError:
+        print(f"[!] Flow file not found: {path}")
+        return None
+    except json.JSONDecodeError as e:
+        print(f"[!] Invalid JSON in flow file: {e}")
+        return None
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("url", help="URL to fuzz")
-    parser.add_argument("--steps", type=int, default=10, help="Number of steps to fuzz")
+    parser.add_argument("--steps", type=int, default=10, help="Number of random steps to generate")
+    parser.add_argument("--flow", help="Path to a JSON file defining the steps to fuzz")
     args = parser.parse_args()
 
     session = requests.Session()
-    steps = [{"name": random_string(), "request": {"method": "GET", "endpoint": "/"}} for _ in range(args.steps)]
+
+    if args.flow:
+        steps = load_flow(args.flow)
+        if not steps:
+            return
+    else:
+        steps = [
+            {"name": random_string(), "request": {"method": "GET", "endpoint": "/"}}
+            for _ in range(args.steps)
+        ]
+
     fuzzer = StateFuzzer(session, args.url)
     fuzzer.fuzz(steps)
 
