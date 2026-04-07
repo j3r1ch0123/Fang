@@ -94,7 +94,7 @@ python3 ssti.py <URL> <PARAMETER> [--login] [--username USER] [--password PASS] 
 Tests for local file inclusion vulnerabilities with multiple encoding bypass techniques and log poisoning support.
 
 ```bash
-python3 lfi.py <URL> <PARAM> <PAYLOAD> [--method GET|POST] [--encode ENCODING] [--php-filter] [--ssh] [--secrets] [--tor]
+python3 lfi.py <URL> <PARAM> <PAYLOAD> [GET|POST] [--encode ENCODING] [--php-filter] [--ssh] [--secrets] [--tor]
 ```
 
 | Argument | Description |
