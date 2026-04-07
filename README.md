@@ -13,6 +13,7 @@ A modular black box penetration testing toolkit for identifying and validating c
 - **Local File Inclusion (LFI)** — File read, PHP filter base64 decode, SSH log poisoning, secrets scanning, Tor support
 - **Server-Side Request Forgery (SSRF)** — Callback-based detection with normal, decimal, and hex IP encoding modes
 - **XML External Entity (XXE)** — File read via external entities, PHP filter support, auto-detection with common payloads
+- **Cross-Site Scripting (XSS)** — Reflection detection, context-aware payload selection (HTML, attribute, unknown)
 
 **API Pentesting Toolkit**
 - **Mass Assignment** — Fuzzes registration/update endpoints for privilege field injection
@@ -94,7 +95,7 @@ python3 ssti.py <URL> <PARAMETER> [--login] [--username USER] [--password PASS] 
 Tests for local file inclusion vulnerabilities with multiple encoding bypass techniques and log poisoning support.
 
 ```bash
-python3 lfi.py <URL> <PARAM> <PAYLOAD> [GET|POST] [--encode ENCODING] [--php-filter] [--ssh] [--secrets] [--tor]
+python3 lfi.py <URL> <PARAM> <PAYLOAD> [--method GET|POST] [--encode ENCODING] [--php-filter] [--ssh] [--secrets] [--tor]
 ```
 
 | Argument | Description |
@@ -149,6 +150,27 @@ python3 xxe.py <URL> [FILE_PATH] [--field FIELD] [--php-filter] [--detect] [--to
 | `--detect` | Auto-detect XXE with common file payloads |
 | `--tor` | Route traffic through Tor |
 | `--outfile` | Save output to file |
+
+---
+
+### XSS (`XSS/xss.py`)
+
+Tests for reflected cross-site scripting. Detects reflection, identifies injection context, and selects payloads accordingly.
+
+```bash
+python3 xss.py <URL> <PARAM> [--method GET|POST]
+```
+
+| Argument | Description |
+|---|---|
+| `url` | Target URL |
+| `param` | Parameter to test |
+| `--method` | HTTP method (default: GET) |
+
+**How it works:**
+1. Sends a unique marker to detect reflection
+2. Identifies the injection context (HTML body, attribute, or unknown)
+3. Tests context-appropriate payloads and reports any that are reflected unescaped
 
 ---
 
@@ -237,6 +259,9 @@ python3 sqli.py -u http://target.com/item -p id -e url
 
 # XXE auto-detect
 python3 xxe.py http://target.com/api/upload --detect
+
+# XSS on a search parameter
+python3 xss.py http://target.com/search q --method GET
 
 # Mass assignment
 python3 mass_assignment.py http://target.com/ api/register user pass
