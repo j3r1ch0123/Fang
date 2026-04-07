@@ -1,5 +1,5 @@
-# Fang 
-A modular web application penetration testing framework for identifying and validating common vulnerabilities.
+# Fang 🐍
+A modular black box penetration testing toolkit for identifying and validating common web application vulnerabilities. Built for bug bounty hunting and responsible disclosure.
 
 > **Disclaimer:** This tool is intended for authorized penetration testing and security research only. Only use Fang against systems you own or have explicit written permission to test. Unauthorized use is illegal and unethical.
 
@@ -7,11 +7,17 @@ A modular web application penetration testing framework for identifying and vali
 
 ## Features
 
+**Web Application Modules**
 - **SQL Injection** — Boolean-based and time-based blind SQLi detection
 - **Server-Side Template Injection (SSTI)** — Auto-detects engine (Jinja2, Tornado, Django, ERB, Twig) and drops into an interactive shell
 - **Local File Inclusion (LFI)** — File read, PHP filter base64 decode, SSH log poisoning, secrets scanning, Tor support
 - **Server-Side Request Forgery (SSRF)** — Callback-based detection with normal, decimal, and hex IP encoding modes
-- **XML External Entity injector** - Detects for XXE injection and reads files
+- **XML External Entity (XXE)** — File read via external entities, PHP filter support, auto-detection with common payloads
+
+**API Pentesting Toolkit**
+- **Mass Assignment** — Fuzzes registration/update endpoints for privilege field injection
+- **BOLA/IDOR** — Path-based and parameter-based object-level authorization testing
+- **JWT Weakness Detection** — Tests for alg:none, weak secrets, and algorithm confusion attacks
 
 ---
 
@@ -46,7 +52,7 @@ You'll be prompted to select a module and enter the target details interactively
 
 ---
 
-## Modules
+## Web Application Modules
 
 ### SQL Injection (`SQLI/sqli.py`)
 
@@ -126,7 +132,95 @@ python3 ssrf.py <URL> <PARAM> <PUBLIC_IP> <PORT> [-e ENCODING] [-m MODE]
 
 ---
 
-## Example
+### XXE (`XXE/xxe.py`)
+
+Tests for XML external entity injection. Supports plain file read and PHP filter base64 extraction.
+
+```bash
+python3 xxe.py <URL> [FILE_PATH] [--field FIELD] [--php-filter] [--detect] [--tor] [--outfile FILE]
+```
+
+| Argument | Description |
+|---|---|
+| `url` | Target URL |
+| `file_path` | File to read (default: `/etc/passwd`) |
+| `--field` | XML field to inject into (default: `email`) |
+| `--php-filter` | Use PHP filter base64 wrapper |
+| `--detect` | Auto-detect XXE with common file payloads |
+| `--tor` | Route traffic through Tor |
+| `--outfile` | Save output to file |
+
+---
+
+## API Pentesting Toolkit
+
+### Mass Assignment (`API/mass_assignment.py`)
+
+Fuzzes API registration and update endpoints for privilege field injection vulnerabilities.
+
+```bash
+python3 mass_assignment.py <URL> <ENDPOINT> <USERNAME> <PASSWORD> [--fields FIELDS] [--tor] [--outfile FILE]
+```
+
+| Argument | Description |
+|---|---|
+| `url` | Base URL of the target |
+| `endpoint` | Registration or update endpoint |
+| `username` | Username to register |
+| `password` | Password to register |
+| `--fields` | Custom fields to test (space-separated) |
+| `--tor` | Route traffic through Tor |
+| `--outfile` | Save results to file |
+
+---
+
+### BOLA/IDOR (`API/bola.py`)
+
+Tests for broken object level authorization via path-based ID iteration or parameter substitution.
+
+```bash
+python3 bola.py <URL> [--token TOKEN] [--range N] [--param PARAM] [--own-id ID] [--test-id ID] [--method GET|POST] [--tor] [--outfile FILE]
+```
+
+| Argument | Description |
+|---|---|
+| `url` | Target API endpoint |
+| `--token` | Bearer token for authenticated requests |
+| `--range` | Number of IDs to iterate (default: 5) |
+| `--param` | Parameter name for parameter-based IDOR |
+| `--own-id` | Your own user ID |
+| `--test-id` | Target user ID to test |
+| `--method` | HTTP method (default: GET) |
+| `--tor` | Route traffic through Tor |
+| `--outfile` | Save results to file |
+
+---
+
+### JWT Weakness Detection (`API/jwt.py`)
+
+Tests JWT tokens for common weaknesses including alg:none, weak secrets, and algorithm confusion.
+
+```bash
+python3 jwt.py <TOKEN> [--url URL] [--header HEADER] [--alg-none] [--weak-secret] [--alg-confusion] [--public-key KEY] [--wordlist FILE] [--all] [--tor] [--outfile FILE]
+```
+
+| Argument | Description |
+|---|---|
+| `token` | JWT token to test |
+| `--url` | Target URL to send forged tokens to |
+| `--header` | Header name (default: `Authorization`) |
+| `--alg-none` | Test alg:none attack |
+| `--weak-secret` | Brute force weak HMAC secret |
+| `--alg-confusion` | Test RS256 → HS256 algorithm confusion |
+| `--public-key` | Public key for algorithm confusion attack |
+| `--wordlist` | Custom wordlist for secret brute force |
+| `--all` | Run all applicable tests |
+| `--tor` | Route traffic through Tor |
+| `--outfile` | Save results to file |
+
+---
+
+## Examples
 
 ```bash
 # Test for SSRF
@@ -140,6 +234,18 @@ python3 lfi.py http://target.com/page.php file /etc/passwd --php-filter
 
 # SQLi with URL encoding
 python3 sqli.py -u http://target.com/item -p id -e url
+
+# XXE auto-detect
+python3 xxe.py http://target.com/api/upload --detect
+
+# Mass assignment
+python3 mass_assignment.py http://target.com/ api/register user pass
+
+# BOLA/IDOR path-based
+python3 bola.py http://target.com/api/users --token eyJ... --range 10
+
+# JWT all tests
+python3 jwt.py eyJ... --url http://target.com/api/profile --all
 ```
 
 ---
