@@ -103,7 +103,7 @@ python3 lfi.py <URL> <PARAM> <PAYLOAD> [--method GET|POST] [--encode ENCODING] [
 | `url` | Target URL |
 | `param` | Vulnerable parameter |
 | `lfi_payload` | File path to include (e.g. `/etc/passwd`) |
-| `--method` | HTTP method (default: GET) |
+| `method` | HTTP method (default: GET) |
 | `--encode` | Encoding: `none`, `url`, `double`, `base64`, `traversal`, `double_traversal`, `nullbyte`, `all` |
 | `--php-filter` | Use PHP filter wrapper to base64-decode source |
 | `--ssh` | Perform SSH log poisoning |
