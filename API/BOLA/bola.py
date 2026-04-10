@@ -8,7 +8,22 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 COMMON_ID_PARAMS = ["id", "user_id", "account_id", "profile_id", "order_id", "item_id", "doc_id", "file_id"]
 
-def test_bola(url, token=None, id_range=5, proxies=None):
+def load_ids(ids_arg=None, ids_file=None):
+    ids = []
+
+    if ids_arg:
+        ids.extend([i.strip() for i in ids_arg.split(",") if i.strip()])
+
+    if ids_file:
+        try:
+            with open(ids_file, "r") as f:
+                ids.extend([line.strip() for line in f if line.strip()])
+        except Exception as e:
+            print(f"[!] Error reading IDs file: {e}")
+
+    return ids
+
+def test_bola(url, token=None, id_range=5, custom_ids=None, proxies=None):
     """
     Iterates over a range of object IDs and checks if unauthorized
     objects are accessible. Confirms BOLA/IDOR if a 200 response
@@ -23,7 +38,14 @@ def test_bola(url, token=None, id_range=5, proxies=None):
 
     confirmed = []
 
-    for obj_id in range(1, id_range + 1):
+    if custom_ids:
+        id_list = custom_ids
+        print(f"[*] Testing {len(id_list)} provided IDs\n")
+    else:
+        id_list = list(range(1, id_range + 1))
+        print(f"[*] Testing IDs 1 through {id_range}\n")
+
+    for obj_id in id_list:
         target = f"{url}/{obj_id}"
         print(f"[*] Requesting: {target}")
 
@@ -113,8 +135,12 @@ def main():
     parser.add_argument("--method", default="GET", choices=["GET", "POST"], help="HTTP method (default: GET)")
     parser.add_argument("--tor", action="store_true", help="Route traffic through Tor")
     parser.add_argument("--outfile", default=None, help="Save results to file")
+    parser.add_argument("--ids", help="Comma-separated list of IDs (UUIDs or others)")
+    parser.add_argument("--ids-file", help="File containing IDs (one per line)")
 
     args = parser.parse_args()
+
+    custom_ids = load_ids(args.ids, args.ids_file)
 
     proxies = None
     if args.tor:
@@ -139,6 +165,7 @@ def main():
             args.url,
             args.token,
             args.id_range,
+            custom_ids,
             proxies
         )
 
@@ -147,3 +174,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
