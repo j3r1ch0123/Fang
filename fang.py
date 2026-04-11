@@ -2,7 +2,6 @@
 import subprocess
 import shlex
 import os
-import sys
 import pyfiglet
 
 def sql_injection():
