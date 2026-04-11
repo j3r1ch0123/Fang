@@ -55,8 +55,14 @@ def lfi():
     method = input(">>> ").strip().upper() or "GET"
     print("[+] Enter encoding method (none, url, double, base64) [default: none]: ")
     encode = input(">>> ").strip() or "none"
+    print("Use php filter? (y/n) [default: n]: ")
+    php_filter = input(">>> ").strip().lower() or "n"
+    if php_filter == "y":
+        php_filter = "--php-filter"
+    else:
+        php_filter = ""
 
-    cmd = f"python3 lfi.py {url} {param} {lfi_payload} {method} --encode {encode}"
+    cmd = f"python3 lfi.py {url} {param} {lfi_payload} {method} --encode {encode} {php_filter}"
     subprocess.run(shlex.split(cmd))
     os.chdir("..")
 
