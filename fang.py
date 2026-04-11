@@ -6,6 +6,8 @@ import pyfiglet
 
 def sql_injection():
     os.chdir("SQLI")
+    os.system("clear")
+    pyfiglet.print_figlet("SQLI")
     print("[+] Enter the URL of the vulnerable web application: ")
     url = input(">>> ")
     print("[+] Enter the vulnerable parameter: ")
@@ -19,6 +21,8 @@ def sql_injection():
 
 def ssti():
     os.chdir("SSTI")
+    os.system("clear")
+    pyfiglet.print_figlet("SSTI")
     print("[+] Do you want to log into the web application? (y/n)")
     choice = input(">>> ").strip().lower()
 
@@ -44,6 +48,8 @@ def ssti():
 
 def lfi():
     os.chdir("LFI")
+    os.system("clear")
+    pyfiglet.print_figlet("LFI")
     print("[+] Enter the URL of the vulnerable web application: ")
     url = input(">>> ")
     print("[+] Enter the vulnerable parameter: ")
@@ -67,6 +73,8 @@ def lfi():
 
 def ssrf():
     os.chdir("SSRF")
+    os.system("clear")
+    pyfiglet.print_figlet("SSRF")
     print("[+] Enter the URL of the vulnerable web application: ")
     url = input(">>> ")
     print("[+] Enter the vulnerable parameter: ")
@@ -97,6 +105,8 @@ def xxe():
 
 def xss():
     os.chdir("XSS")
+    os.system("clear")
+    pyfiglet.print_figlet("XSS")
     print("[+] Enter the URL of the vulnerable web application: ")
     url = input(">>> ")
     print("[+] Enter the vulnerable parameter: ")
@@ -112,6 +122,8 @@ def xss():
 
 def api_hack():
     os.chdir("API")
+    os.system("clear")
+    pyfiglet.print_figlet("API")
     print("1. Mass Assignment")
     print("2. BOLA/IDOR")
     print("3. JWT")
@@ -119,6 +131,8 @@ def api_hack():
     choice = input(">>> ").strip()
 
     if choice == "1":
+        os.system("clear")
+        pyfiglet.print_figlet("Mass Assignment")
         os.chdir("Mass-Assignment")
         print("[+] Enter the base URL of the vulnerable API: ")
         url = input(">>> ")
@@ -144,6 +158,8 @@ def api_hack():
 
     elif choice == "2":
         os.chdir("BOLA")
+        os.system("clear")
+        pyfiglet.print_figlet("BOLA")
         print("[+] Enter the target API endpoint (e.g. http://target.com/api/users): ")
         url = input(">>> ")
         print("[+] Enter Bearer token (leave blank if none): ")
@@ -164,6 +180,8 @@ def api_hack():
 
     elif choice == "3":
         os.chdir("JWT")
+        os.system("clear")
+        pyfiglet.print_figlet("JWT")
         print("[+] Enter the target API endpoint: ")
         url = input(">>> ")
         print("[+] Enter JWT token: ")
@@ -193,6 +211,8 @@ def api_hack():
 
 def fuzz():
     os.chdir("Fuzzer")
+    os.system("clear")
+    pyfiglet.print_figlet("Fuzzer")
     print("[+] Enter the URL to fuzz: ")
     url = input(">>> ")
     print("[+] Enter the number of steps (default 10): ")
