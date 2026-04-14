@@ -41,70 +41,82 @@ def encode_payload(payload, method):
         print(f"Unknown encoding method: {method}")
         return payload
 
-def boolean_based_sqli(url, param, encoding):
-    sizes = []
-    for payload in TRUE_PAYLOADS:
-        encoded_payload = encode_payload(payload, encoding)
-        try:
-            response = requests.get(url, params={param: encoded_payload}, timeout=10)
-            if response.status_code == 200:
-                sizes.append(len(response.text))
-        except requests.exceptions.RequestException as e:
-            print(f"[!] Request error: {e}")
-    return sum(sizes) / len(sizes) if sizes else None
-
-def boolean_based_errors(url, param, encoding):
-    sizes = []
-    for payload in FALSE_PAYLOADS:
-        encoded_payload = encode_payload(payload, encoding)
-        try:
-            response = requests.get(url, params={param: encoded_payload}, timeout=10)
-            if response.status_code == 200:
-                sizes.append(len(response.text))
-        except requests.exceptions.RequestException as e:
-            print(f"[!] Request error: {e}")
-    return sum(sizes) / len(sizes) if sizes else None
-
-def compare_response_sizes(url, param, encoding):
+def get_response_size(url, param, payload, encoding):
+    encoded_payload = encode_payload(payload, encoding)
     try:
-        baseline = requests.get(url, params={param: ""}, timeout=10)
-        baseline_size = len(baseline.text)
+        response = requests.get(url, params={param: encoded_payload}, timeout=10)
+        if response.status_code == 200:
+            return len(response.text)
+    except requests.exceptions.RequestException as e:
+        print(f"[!] Request error: {e}")
+    return None
+
+
+def boolean_based_detection(url, param, encoding, tolerance=20, required_matches=2):
+    try:
+        baseline_res = requests.get(url, params={param: ""}, timeout=10)
+        baseline_size = len(baseline_res.text)
     except requests.exceptions.RequestException as e:
         print(f"[!] Could not reach target: {e}")
         return False
 
-    true_size = boolean_based_sqli(url, param, encoding)
-    false_size = boolean_based_errors(url, param, encoding)
+    matches = 0
 
-    if true_size is None or false_size is None:
-        print("Could not retrieve valid responses for comparison")
-        return False
+    for true_payload, false_payload in zip(TRUE_PAYLOADS, FALSE_PAYLOADS):
+        true_size = get_response_size(url, param, true_payload, encoding)
+        false_size = get_response_size(url, param, false_payload, encoding)
 
-    true_delta = abs(true_size - baseline_size)
-    false_delta = abs(false_size - baseline_size)
+        if true_size is None or false_size is None:
+            continue
 
-    if true_size > false_size and true_delta < false_delta:
-        print("[+] The parameter is likely vulnerable to Boolean Based Blind SQL injection")
+        true_close = abs(true_size - baseline_size) <= tolerance
+        false_far = abs(false_size - baseline_size) > tolerance
+
+        print(f"[DEBUG] TRUE: {true_size}, FALSE: {false_size}, BASE: {baseline_size}")
+
+        if true_close and false_far:
+            matches += 1
+
+    if matches >= required_matches:
+        print(f"[+] Likely Boolean-Based SQLi ({matches} strong matches)")
         return True
     else:
-        print("[-] The parameter is not likely vulnerable to Boolean Based Blind SQL injection")
+        print(f"[-] Not likely vulnerable ({matches} matches)")
         return False
 
-def time_based_injections(url, param, encoding):
+def time_based_injections(url, param, encoding, attempts=3, delay_threshold=4):
+    baseline_times = []
+    
+    for _ in range(attempts):
+        start = time.time()
+        requests.get(url, params={param: ""}, timeout=10)
+        baseline_times.append(time.time() - start)
+
+    baseline_avg = sum(baseline_times) / len(baseline_times)
+
     for payload in TIME_BASED_PAYLOADS:
-        encoded_payload = encode_payload(payload, encoding)
-        try:
-            start_time = time.time()
-            requests.get(url, params={param: encoded_payload}, timeout=15)
-            end_time = time.time()
+        delays = []
+        for _ in range(attempts):
+            encoded_payload = encode_payload(payload, encoding)
+            start = time.time()
+            try:
+                requests.get(url, params={param: encoded_payload}, timeout=15)
+                delays.append(time.time() - start)
+            except requests.exceptions.RequestException:
+                continue
 
-            if (end_time - start_time) > 5:
-                print("[+] The parameter is likely vulnerable to Time Based Blind SQL injection")
-                return True
-        except requests.exceptions.RequestException as e:
-            print(f"[!] Request error: {e}")
+        if not delays:
+            continue
 
-    print("[-] The parameter is not likely vulnerable to Time Based Blind SQL injection")
+        avg_delay = sum(delays) / len(delays)
+
+        print(f"[DEBUG] Baseline: {baseline_avg:.2f}s | Payload: {avg_delay:.2f}s")
+
+        if avg_delay - baseline_avg > delay_threshold:
+            print("[+] Likely Time-Based SQLi")
+            return True
+
+    print("[-] Not likely vulnerable to Time-Based SQLi")
     return False
 
 def main():
@@ -119,7 +131,7 @@ def main():
     if encoding == "all":
         for enc in ENCODINGS:
             print(f"[+] Testing with encoding: {enc}")
-            if compare_response_sizes(args.url, args.param, enc):
+            if boolean_based_detection(args.url, args.param, encoding):
                 return
             if time_based_injections(args.url, args.param, enc):
                 return
