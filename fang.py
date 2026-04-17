@@ -14,8 +14,10 @@ def sql_injection():
     param = input(">>> ")
     print("[+] Enter encoding method (none, url, double, base64) [default: none]: ")
     encode = input(">>> ").strip() or "none"
+    print("[+] Enter the value to test against [default: 1]: ")
+    value = input(">>> ").strip() or "none"
 
-    cmd = f"python3 sqli.py -u {url} -p {param} -e {encode}"
+    cmd = f"python3 sqli.py -u {url} -p {param} -e {encode} -v {value}"
     subprocess.run(shlex.split(cmd))
     os.chdir("..")
 
@@ -262,3 +264,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
