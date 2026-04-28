@@ -2,3 +2,4 @@ requests
 paramiko
 pyfiglet
 urllib3
+pwntools

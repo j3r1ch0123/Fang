@@ -98,6 +98,8 @@ def xxe():
     file_path = input(">>> ").strip() or "/etc/passwd"
     print("[+] Enter the XML field name [default: email]: ")
     field = input(">>> ").strip() or "email"
+    print("[+] Enter the HTTP method (GET or POST) [default: POST]: ")
+    method = input(">>> ").strip().upper() or "POST"
     print("[+] Use PHP filter? (y/n): ")
     php_filter = "--php-filter" if input(">>> ").strip().lower() == "y" else ""
 
@@ -200,7 +202,7 @@ def api_hack():
         cmd = f"python3 jwt.py {token_input} --url {url} --all {wordlist} {outfile}"
         subprocess.run(shlex.split(cmd))
         os.chdir("..")
-    
+
     elif choice == "4":
         print("Back to the main menu")
         os.chdir("..")
@@ -225,6 +227,166 @@ def fuzz():
     cmd = f"python3 fuzzer.py {url} --flow {flow}"
     subprocess.run(shlex.split(cmd))
 
+def return_to_libc():
+    os.system("clear")
+    pyfiglet.print_figlet("ret2libc")
+
+    print("[+] Enter the IP address: ")
+    ip = input(">>> ").strip()
+
+    print("[+] Enter the port number: ")
+    port = input(">>> ").strip()
+
+    print("[+] Enter the path to the target binary: ")
+    elf = input(">>> ").strip()
+
+    print("[+] Enter the buffer size: ")
+    buffer_size = input(">>> ").strip()
+
+    print("[+] Enter pop rdi ; ret gadget address (hex): ")
+    pop_rdi = input(">>> ").strip()
+
+    print("[+] Enter ret gadget address for alignment (hex): ")
+    ret = input(">>> ").strip()
+
+    print("[+] Enable dynamic mode for ASLR bypass? (y/n): ")
+    dynamic = input(">>> ").strip().lower() == "y"
+
+    if dynamic:
+        print("[+] Enter path to libc.so.6: ")
+        libc = input(">>> ").strip()
+        print("[+] Enter puts@plt address (hex): ")
+        puts_plt = input(">>> ").strip()
+        print("[+] Enter puts@got address (hex): ")
+        puts_got = input(">>> ").strip()
+        print("[+] Enter main() address (hex): ")
+        main_addr = input(">>> ").strip()
+        print("[+] Enter string to recvuntil before payload: ")
+        recv_until = input(">>> ").strip()
+        print("[+] Enter string to send first (e.g. menu option): ")
+        send_first = input(">>> ").strip()
+        print("[+] Enter string to recvuntil before stage 2: ")
+        stage2_until = input(">>> ").strip()
+
+        cmd = (
+            f"python3 ret2libc.py "
+            f"-H {ip} "
+            f"-p {port} "
+            f"-e {elf} "
+            f"-b {buffer_size} "
+            f"--pop-rdi {pop_rdi} "
+            f"--ret {ret} "
+            f"--libc {libc} "
+            f"--puts-plt {puts_plt} "
+            f"--puts-got {puts_got} "
+            f"--main {main_addr} "
+            f"--recv-until '{recv_until}' "
+            f"--send-first '{send_first}' "
+            f"--stage2-until '{stage2_until}' "
+            f"--dynamic "
+            f"--send"
+        )
+    else:
+        print("[+] Enter path to libc.so.6 (leave blank to provide addresses manually): ")
+        libc = input(">>> ").strip()
+        print("[+] Enter known libc base address (hex): ")
+        libc_base = input(">>> ").strip()
+        print("[+] Enter system() address (hex): ")
+        system = input(">>> ").strip()
+        print("[+] Enter /bin/sh address (hex): ")
+        bin_sh = input(">>> ").strip()
+        print("[+] Enter string to recvuntil before payload: ")
+        recv_until = input(">>> ").strip()
+        print("[+] Enter string to send first (e.g. menu option): ")
+        send_first = input(">>> ").strip()
+
+        libc_arg = f"--libc {libc}" if libc else ""
+
+        cmd = (
+            f"python3 ret2libc.py "
+            f"-H {ip} "
+            f"-p {port} "
+            f"-e {elf} "
+            f"-b {buffer_size} "
+            f"--pop-rdi {pop_rdi} "
+            f"--ret {ret} "
+            f"{libc_arg} "
+            f"--libc-base {libc_base} "
+            f"--system {system} "
+            f"--bin-sh {bin_sh} "
+            f"--recv-until '{recv_until}' "
+            f"--send-first '{send_first}' "
+            f"--send"
+        )
+
+    subprocess.run(shlex.split(cmd))
+
+def binary_exploitation():
+    os.chdir("Binary-Exploitation")
+    os.system("clear")
+    pyfiglet.print_figlet("Binary Exploitation")
+
+    print("1. Buffer Overflow")
+    print("2. Return to libc")
+    print("3. Back")
+    choice = input(">>> ").strip()
+
+    if choice == "1":
+        buffer_overflow()
+    elif choice == "2":
+        return_to_libc()
+    elif choice == "3":
+        os.chdir("..")
+        return
+    else:
+        print("[-] Invalid choice")
+        os.chdir("..")
+        return
+
+    os.chdir("..")
+
+def buffer_overflow():
+    os.system("clear")
+    pyfiglet.print_figlet("Buffer Overflow")
+    print("[+] Enter the IP address: ")
+    ip = input(">>> ").strip()
+
+    print("[+] Enter the port number: ")
+    port_number = input(">>> ").strip()
+
+    print("[+] Enter the path to the shellcode (default shellcode.bin): ")
+    shellcode_path = input(">>> ").strip() or "shellcode.bin"
+
+    print("[+] Enter the buffer size: ")
+    buffer_size = input(">>> ").strip()
+
+    print("[+] Enter the return address (hex, e.g. 0x7fffffffdbe0): ")
+    return_address = input(">>> ").strip()
+
+    print("[+] Enter the NOP sled size (default 128): ")
+    nop_size = input(">>> ").strip() or "128"
+
+    print("[+] Enter extra offset adjustment (default 0): ")
+    extra_offset = input(">>> ").strip() or "0"
+
+    print("[+] Enter bad chars to avoid (comma-separated hex, default 00,0a,0d): ")
+    bad_chars = input(">>> ").strip() or "00,0a,0d"
+
+    cmd = (
+        f"python3 buffer_overflow.py "
+        f"-H {ip} "
+        f"-p {port_number} "
+        f"-s {shellcode_path} "
+        f"-b {buffer_size} "
+        f"-r {return_address} "
+        f"--nop-size {nop_size} "
+        f"--extra-offset {extra_offset} "
+        f"--bad-chars {bad_chars} "
+        f"--send"
+    )
+
+    subprocess.run(shlex.split(cmd))
+
 def main():
     ascii_banner = pyfiglet.figlet_format("Fang")
     print(ascii_banner)
@@ -237,7 +399,8 @@ def main():
         print("6. XSS")
         print("7. API Pentesting Toolkit")
         print("8. Fuzzer")
-        print("9. Exit")
+        print("9. Binary Exploitation")
+        print("10. Exit")
         print(">>> ", end="")
         choice = input().strip()
         if choice == "1":
@@ -257,6 +420,8 @@ def main():
         elif choice == "8":
             fuzz()
         elif choice == "9":
+            binary_exploitation()
+        elif choice == "10":
             print("Goodbye!")
             break
         else:
@@ -264,4 +429,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
