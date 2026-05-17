@@ -34,7 +34,7 @@ SUPPORTED_ENGINES = ["jinja2", "tornado", "django"]
 
 class SSTIExploit:
     def __init__(self, url):
-        self.url = url.rstrip("/") + "/"
+        self.url = url.rstrip("/")
         self.session = requests.Session()
         self.engine = None
 
