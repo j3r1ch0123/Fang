@@ -10,14 +10,8 @@ def sql_injection():
     pyfiglet.print_figlet("SQLI")
     print("[+] Enter the URL of the vulnerable web application: ")
     url = input(">>> ")
-    print("[+] Enter the vulnerable parameter: ")
-    param = input(">>> ")
-    print("[+] Enter encoding method (none, url, double, base64) [default: none]: ")
-    encode = input(">>> ").strip() or "none"
-    print("[+] Enter the value to test against [default: 1]: ")
-    value = input(">>> ").strip() or "none"
 
-    cmd = f"python3 sqli.py -u {url} -p {param} -e {encode} -v {value}"
+    cmd = f"python3 sqli.py {url}"
     subprocess.run(shlex.split(cmd))
     os.chdir("..")
 
