@@ -1,67 +1,56 @@
 #!/usr/bin/env python3
 import requests
 import argparse
+from difflib import SequenceMatcher
 
 class SQLInjection:
+    # How similar two pages must be (0..1) to count as "the same".
+    SIMILARITY_THRESHOLD = 0.95
+
     def __init__(self, url, true_payload, false_payload):
         self.url = url
         self.true_payload = true_payload
         self.false_payload = false_payload
-        self.baseline_size = None
-        self.truncated_size = None
+        self.baseline_text = None
 
-    def get_baseline_size(self):
-        if self.baseline_size is not None:
-            return self.baseline_size, self.truncated_size
+    def _similarity(self, a, b):
+        return SequenceMatcher(None, a, b).ratio()
 
-        baseline = requests.get(self.url)
-        self.baseline_size = len(baseline.text)
-        print(f"[+] Baseline URL size: {self.baseline_size}...")
-
-        truncated = requests.get(self.url + "'")
-        self.truncated_size = len(truncated.text)
-
-        if self.truncated_size < self.baseline_size:
-            print("[+] Web page truncated. Continuing with testing...")
-        elif self.truncated_size == self.baseline_size:
-            print("[*] Page unchanged by a lone quote; boolean-length test may be unreliable.")
-        else:
-            print("[*] Truncated page is larger than baseline; results may be unreliable.")
-
-        return self.baseline_size, self.truncated_size
-
-    def positive_boolean_test(self, true_payload):
-        baseline_size, truncated_size = self.get_baseline_size()
-        response_length = len(requests.get(self.url + true_payload).text)
-        # A TRUE condition should render like the normal (baseline) page.
-        if response_length >= baseline_size:
-            print(f"[+] True boolean confirmed: {true_payload}...")
-            return True
-        print(f"[*] True payload did not work: {true_payload}...")
-        return False
-
-    def negative_boolean_test(self, false_payload):
-        baseline_size, truncated_size = self.get_baseline_size()
-        response_length = len(requests.get(self.url + false_payload).text)
-        # A FALSE condition should NOT match the baseline (fewer/no rows).
-        if response_length < baseline_size:
-            print(f"[+] False boolean confirmed: {false_payload}...")
-            return True
-        print(f"[*] False payload did not work: {false_payload}...")
-        return False
+    def get_baseline(self):
+        if self.baseline_text is None:
+            self.baseline_text = requests.get(self.url).text
+            print(f"[+] Baseline URL size: {len(self.baseline_text)}...")
+        return self.baseline_text
 
     def sqli_test(self):
-        true_ok = self.positive_boolean_test(self.true_payload)
-        false_ok = self.negative_boolean_test(self.false_payload)
-        if true_ok and false_ok:
-            print(f"[+] SQLi confirmed! true={self.true_payload!r} false={self.false_payload!r}")
+        baseline = self.get_baseline()
+        true_text = requests.get(self.url + self.true_payload).text
+        false_text = requests.get(self.url + self.false_payload).text
+
+        true_vs_baseline = self._similarity(true_text, baseline)
+        false_vs_baseline = self._similarity(false_text, baseline)
+        true_vs_false = self._similarity(true_text, false_text)
+
+        print(f"    true~baseline={true_vs_baseline:.3f} "
+              f"false~baseline={false_vs_baseline:.3f} "
+              f"true~false={true_vs_false:.3f}")
+
+        # TRUE should look like the baseline; FALSE should not;
+        # and TRUE and FALSE must clearly differ from each other.
+        if (true_vs_baseline >= self.SIMILARITY_THRESHOLD
+                and false_vs_baseline < self.SIMILARITY_THRESHOLD
+                and true_vs_false < self.SIMILARITY_THRESHOLD):
+            print(f"[+] SQLi confirmed! true={self.true_payload!r} "
+                  f"false={self.false_payload!r}")
             return True
+
         print("[-] SQLi not confirmed for this pair...")
         return False
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Boolean-based blind SQLi detector (authorized testing only)")
+    parser = argparse.ArgumentParser(
+        description="Boolean-based blind SQLi detector (authorized testing only)")
     parser.add_argument("url", help="URL to test")
     args = parser.parse_args()
 
@@ -72,7 +61,7 @@ def main():
         for false_payload in FALSE_PAYLOADS:
             sqli = SQLInjection(args.url, true_payload, false_payload)
             if sqli.sqli_test():
-                return  # stop at first confirmed pair
+                return
     print("[-] No payload pair confirmed SQLi.")
 
 
