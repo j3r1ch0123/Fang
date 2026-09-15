@@ -68,16 +68,8 @@ You'll be prompted to select a module and enter the target details interactively
 Detects boolean-based and time-based blind SQL injection.
 
 ```bash
-python3 sqli.py -u <URL> -p <PARAMETER> [-e <ENCODING>] [-v <VALUE>]
+python3 sqli.py <URL>
 ```
-
-| Argument | Description |
-|---|---|
-| `-u` | Target URL |
-| `-p` | Vulnerable parameter name |
-| `-e` | Encoding: `none`, `url`, `double`, `base64`, `all` |
-| `-v` | Base parameter value to prepend to payloads (default: `1`) |
-
 ---
 
 ### SSTI (`SSTI/ssti.py`)
