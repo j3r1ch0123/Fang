@@ -65,7 +65,7 @@ You'll be prompted to select a module and enter the target details interactively
 
 ### SQL Injection (`SQLI/sqli.py`)
 
-Detects boolean-based and time-based blind SQL injection.
+Detects boolean-based SQL injection.
 
 ```bash
 python3 sqli.py <URL>
